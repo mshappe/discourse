@@ -16,7 +16,7 @@ RVM supports OS X. For other 'packages', **[Homebrew](http://mxcl.github.com/hom
 
 While some people dislike magic, I recommend letting RVM do the dirty work for you. The following invocations will cover all of the ground that the Ubuntu instructions cover with apt-get.
 
-If you don't have RVM installed, the "official" install command line on rvm.io will take care of just about everything you need:
+If you don't have RVM installed, the "official" install command line on rvm.io will take care of just about everything you need, including installing Homebrew if you don't already have it installed. If you do, it will bring things up to date and use it to install the packages it needs.
 
     curl -L https://get.rvm.io | bash -s stable --rails --autolibs=enabled # Or, --ruby=1.9.3
 
