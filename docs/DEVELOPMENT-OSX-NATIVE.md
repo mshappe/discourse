@@ -12,9 +12,11 @@ OS X 10.8 uses Unicode by default. You can, of course, double-check this by exam
 
 ## RVM and Ruby
 
-RVM supports OS X. For other 'packages', **[Homebrew](http://mxcl.github.com/homebrew)** is recommended as the package manager. Brew is very different from Apt, in that it often installs from source, and almost always installs development files as well as binaries, especially for libraries, so there are no special '-dev' packages.
+You will probably need XCode and the XCode command line tools install. Yes, this means you need to actually deal with Apple. Fortunately, XCode is free; you just have to register with them for it.
 
-While some people dislike magic, I recommend letting RVM do the dirty work for you. The following invocations will cover all of the ground that the Ubuntu instructions cover with apt-get.
+RVM supports OS X fairly nicely, and cooperates with **[Homebrew](http://mxcl.github.com/homebrew)** as a package manager for dependencies. Brew is very different from Apt, in that it often installs from source, and almost always installs development files as well as binaries, especially for libraries, so there are no special '-dev' packages.
+
+While some people dislike magic, I recommend letting RVM do most of the dirty work for you.
 
 If you don't have RVM installed, the "official" install command line on rvm.io will take care of just about everything you need, including installing Homebrew if you don't already have it installed. If you do, it will bring things up to date and use it to install the packages it needs.
 
