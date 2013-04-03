@@ -2,9 +2,9 @@
 
 These instructions assume you have read and understood the **[Discourse Advanced Developer Install Guide](https://github.com/discourse/discourse/blob/master/docs/DEVELOPER-ADVANCED.md)**. 
 
-While you can, of course, build or use a vagrant environment on OS X, if you already develop Rails apps on OS X, you might prefer to just work in your native environment. These instructions assume you're already developing with Ruby, at least, if not with Rails, natively on OS X.
+OS X has become a popular platform for developing Ruby on Rails applications; as such, if you run OS X, you might find it more congenial to work on **[Discourse](http://discourse.org)** in your native environment. These instructions should get you there.
 
-As the OS X page at rvm.io suggests, setting up the environment to be "safe" for building one's own ruby environment is slightly fraught with peril because of Apple's switch to CLANG based compilers. If you're **not** already working successfully with RVM-based Ruby in OS X, it might be easier to stick with vagrant/Linux for now!
+Obviously, if you **already** develop Ruby on OS X, a lot of this will be redundant, because you'll have already done it, or something like it. If that's the case, you may well be able to just install Ruby 2.0 using RVM and get started! Discourse has enough dependencies, however (note: not a criticism!) that there's a good chance you'll find **something** else in this document that's useful for getting your Discourse development started!
 
 ## Unicode
 
@@ -22,7 +22,7 @@ You will then need the old GCC-4.2 compilers, which leads us to...
 
 ## Homebrew
 
-**[Homebrew](http://mxcl.github.com/homebrew)** is a package manager for ports of various Open Source packages that Apple doesn't already include (or newer versions of the ones they do), and competes in that space with MacPorts and a few others. Brew is very different from Apt, in that it often installs from source, and almost always installs development files as well as binaries, especially for libraries, so there are no special '-dev' packages.
+**[Homebrew](http://mxcl.github.com/homebrew)** is a package manager for ports of various Open Source packages that Apple doesn't already include (or newer versions of the ones they do), and competes in that space with MacPorts and a few others. Brew is very different from Apt, in that it often installs from source, and almost always installs development files as well as binaries, especially for libraries, so there are no special "-dev" packages.
 
 RVM (below) can automatically install homebrew for you with the autolibs setting, but doesn't install the GCC-4.2 compiler package when it does so, possibly because that package is not part of the mainstream homebrew repository.
 
@@ -34,15 +34,60 @@ So, you will need to install Homebrew separately, based on the instructions at t
 
 (You may note the Homebrew installation script requires ruby. This is not a chicken-and-egg problem; OS X 10.8 comes with ruby 1.8.7)
 
+### LibXML2
+
+The gem **[Nokogiri](http://nokogiri.org)** depends upon **[libxml2](http://www.xmlsoft.org)**.
+
+Discourse is mostly developed under Ubuntu, and Ubuntu currently installs libxml2 version 2.7.6.
+
+Homebrew, by default, will install version 2.9.0.
+
+For the most part, this is not a problem. However, version 2.9.0 apparently defaults to emitting "prettier" code, at least, it does the way Discourse's PrettyText#code method and Nokogiri invoke it. This has little practical effect, but it will cause three specs for PrettyText to fail.
+
+If you're religious about making sure your tests are green when they're supposed to be (and you should be!), you can work around this by forcing a different version of libxm2 before you begin to install RVM and the gems, thusly:
+
+    cd /usr/local # Assuming this is where Homebrew is; it should be!
+
+**CHOOSE ONE AND ONLY ONE OF THESE**
+
+2.8 the latest version that DOESN'T break specs
+
+    git checkout 763d946 /usr/local/Library/Formula/libxml2.rb 
+
+**OR**
+
+2.7.6, the same as Ubuntu
+
+    git checkout 8939a91 /usr/local/Library/Formula/libxml2.rb 
+
+then
+
+    brew install libxml2
+    brew switch libxml2 2.8.0 # or 2.7.6, depending on which you chose above
+
+These instructions work whether your homebrew is newly installed today or you've been using it for a while.
+
+#### Rebuilding Nokogiri
+
+If you were already developing projects using Ruby and, more to the point, Nokogiri, you may get errors after making the above change. You can rebuild the version of nokogiri your project is using to link against the new-old library version by invoking
+
+    gem pristine nokogiri
+
+Obviously, your RVM environment should be the correct one for the project that's giving you problems when you do this.
+
 ## RVM and Ruby
 
 While some people dislike magic, I recommend letting RVM do most of the dirty work for you.
 
+### RVM from scratch
+
 If you don't have RVM installed, the "official" install command line on rvm.io will take care of just about everything you need, including installing Homebrew if you don't already have it installed. If you do, it will bring things up to date and use it to install the packages it needs.
 
-    curl -L https://get.rvm.io | bash -s stable --rails --autolibs=enabled # Or, --ruby=1.9.3
+    curl -L https://get.rvm.io | bash -s stable --rails --autolibs=enabled
 
 **IMPORTANT** As of this writing, there is a known bug in rubygems that will make it appear to not properly install. It's fibbing. It installs just fine.
+
+### Updating RVM
 
 If you do already have RVM installed, this should make sure everything is up to date for what you'll need.
 
@@ -63,11 +108,15 @@ Either way, you'll now want to install the 'turbo' version of Ruby 2.0.
 
 ## Git
 
-OS X comes with Git, but I recommend you update to Homebrew's version:
+### Command line
+
+OS X comes with Git (which is why the LibXML2 dance above will work before this step!), but I recommend you update to Homebrew's version:
 
     brew install git # 1.8.2 is current
 
-## SourceTree
+You should now be able to check out a clone of Discourse.
+
+### SourceTree
 
 Atlassan has a free GIT client for OS X called [SourceTree](http://www.sourcetreeapp.com/download/) which can be extremely useful for keeping visual track of what's going on in Git-land. While it's arguably not a full substitute for command-line git (especially if you know the command line well), it's extremely powerful for a GUI version-control client.
 
@@ -75,7 +124,7 @@ Atlassan has a free GIT client for OS X called [SourceTree](http://www.sourcetre
 
 **NOTA BENE** As I'm writing this, Postgres is known to have some sort of hideous security problem that is supposed to be patched Real Soon Now. Be careful!
 
-OS X ships with postgres, but you're better off going with the latest from Homebrew or [Postgres.App](http://postgresapp.com).
+OS X ships with Postgres 9.1.5, but you're better off going with the latest from Homebrew or [Postgres.App](http://postgresapp.com).
 
 ### Using Postgress.app
 
@@ -84,10 +133,11 @@ OS X ships with postgres, but you're better off going with the latest from Homeb
 
 ### Using Homebrew:
 
-Whereas Ubuntu installs postgres with 'postgres' as the default superuser, Homebrew installs it with the user who installed it as such...and yet with 'postgres' as the default database. Go figure. However, the seed data currently has some dependencies on their being a 'postgres' user, so we create one below.
+Whereas Ubuntu installs postgres with 'postgres' as the default superuser, Homebrew installs it with the user who installed it as such...and yet with 'postgres' as the default database. Go figure. 
+
+However, the seed data currently has some dependencies on their being a 'postgres' user, so we create one below.
 
 In theory, you're not setting up with vagrant, either, and shouldn't need a vagrant user; however, again, all the seed data assumes 'vagrant'. To avoid headaches, it's probably best to go with this flow, so again, we create a 'vagrant' user.
-
 
     brew install postgresql # Installs 9.2
     ln -sfv /usr/local/opt/postgresql/*.plist ~/Library/LaunchAgents
@@ -107,9 +157,9 @@ In theory, you're not setting up with vagrant, either, and shouldn't need a vagr
     psql -d discourse_development -c "CREATE EXTENSION hstore;"
     psql -d discourse_development -c "CREATE EXTENSION pg_trgm;"
 
-You should not need to alter /usr/local/var/postgres/pg_hba.conf
+You should not need to alter `/usr/local/var/postgres/pg_hba.conf`
 
-## Loading seed data
+### Loading seed data
 
 From the discource source tree:
     
@@ -137,5 +187,5 @@ Copy `config/database.yml.sample` and `config/redis.yml.sample` to `config/datab
     rake db:migrate
     rake db:test:prepare
     rake db:seed_fu
-    bundle exec rspec # 3 specs will fail right now! It's a libxml thing.
+    bundle exec rspec # All specs should pass unless you didn't do the libxml2 dance above.
 
