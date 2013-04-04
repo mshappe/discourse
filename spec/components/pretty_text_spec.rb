@@ -1,13 +1,18 @@
 require 'spec_helper'
 require 'pretty_text'
+require 'nokogiri/diff'
 
 describe PrettyText do
 
   describe "Cooking" do
     it "should support github style code blocks" do
-      PrettyText.cook("```
+      a = Nokogiri::HTML(PrettyText.cook("```
 test
-```").should == "<pre><code class=\"lang-auto\">test  \n</code></pre>"
+```"))
+      b = Nokogiri::HTML("<pre><code class=\"lang-auto\">test  \n</code></pre>")
+      a.diff(b) do |change, node|
+        change.should_not =~ /^[+-]/
+      end
     end
 
     it "should support quoting [] " do
@@ -15,7 +20,19 @@ test
     end
 
     it "produces a quote even with new lines in it" do
-      PrettyText.cook("[quote=\"EvilTrout, post:123, topic:456, full:true\"]ddd\n[/quote]").should == "<p></p><aside class=\"quote\" data-post=\"123\" data-topic=\"456\" data-full=\"true\"><div class=\"title\">\n    <div class=\"quote-controls\"></div>\n  <img width=\"20\" height=\"20\" src=\"/users/eviltrout/avatar/40?__ws=http%3A%2F%2Ftest.localhost\" class=\"avatar \" title=\"\">\n  EvilTrout\n  said:\n  </div>\n  <blockquote>ddd</blockquote>\n</aside><p></p>"
+      a = Nokogiri::HTML(PrettyText.cook("[quote=\"EvilTrout, post:123, topic:456, full:true\"]ddd\n[/quote]"))
+      b = Nokogiri::HTML("<p></p><aside class=\"quote\" data-post=\"123\" data-topic=\"456\" data-full=\"true\"><div class=\"title\">\n    <div class=\"quote-controls\"></div>\n  <img width=\"20\" height=\"20\" src=\"/users/eviltrout/avatar/40?__ws=http%3A%2F%2Ftest.localhost\" class=\"avatar \" title=\"\">\n  EvilTrout\n  said:\n  </div>\n  <blockquote>ddd</blockquote>\n</aside><p></p>")
+
+      puts a.to_html
+      puts "======"
+      puts b.to_html
+      puts "======"
+
+      a.diff(b) do |change, node|
+        p "#{change.ljust(30)}  #{node}"
+        change.should_not =~ /^[+-]/
+        puts "------"
+      end
     end
 
     it "should produce a quote" do
@@ -63,7 +80,7 @@ test
 
     it 'should allow for @mentions to have punctuation' do
       PrettyText.cook("hello @bob's @bob,@bob; @bob\"").should ==
-        "<p>hello <span class=\"mention\">@bob</span>'s <span class=\"mention\">@bob</span>,<span class=\"mention\">@bob</span>; <span class=\"mention\">@bob</span>\"</p>"
+          "<p>hello <span class=\"mention\">@bob</span>'s <span class=\"mention\">@bob</span>,<span class=\"mention\">@bob</span>; <span class=\"mention\">@bob</span>\"</p>"
     end
 
     it 'should add spoiler tags' do
@@ -72,7 +89,7 @@ test
 
     it "should only detect ``` at the begining of lines" do
       PrettyText.cook("    ```\n    hello\n    ```")
-        .should == "<pre><code>```\nhello\n```\n</code></pre>"
+      .should == "<pre><code>```\nhello\n```\n</code></pre>"
     end
   end
 
@@ -105,43 +122,43 @@ test
 
   describe "Excerpt" do
     it "should preserve links" do
-      PrettyText.excerpt("<a href='http://cnn.com'>cnn</a>",100).should == "<a href='http://cnn.com'>cnn</a>"
+      PrettyText.excerpt("<a href='http://cnn.com'>cnn</a>", 100).should == "<a href='http://cnn.com'>cnn</a>"
     end
 
     it "should dump images" do
-      PrettyText.excerpt("<img src='http://cnn.com/a.gif'>",100).should == "[image]"
+      PrettyText.excerpt("<img src='http://cnn.com/a.gif'>", 100).should == "[image]"
     end
 
     it "should keep alt tags" do
-      PrettyText.excerpt("<img src='http://cnn.com/a.gif' alt='car' title='my big car'>",100).should == "[car]"
+      PrettyText.excerpt("<img src='http://cnn.com/a.gif' alt='car' title='my big car'>", 100).should == "[car]"
     end
 
     it "should keep title tags" do
-      PrettyText.excerpt("<img src='http://cnn.com/a.gif' title='car'>",100).should == "[car]"
+      PrettyText.excerpt("<img src='http://cnn.com/a.gif' title='car'>", 100).should == "[car]"
     end
 
     it "should deal with special keys properly" do
-      PrettyText.excerpt("<pre><b></pre>",100).should == ""
+      PrettyText.excerpt("<pre><b></pre>", 100).should == ""
     end
 
     it "should truncate stuff properly" do
-      PrettyText.excerpt("hello world",5).should == "hello&hellip;"
+      PrettyText.excerpt("hello world", 5).should == "hello&hellip;"
     end
 
     it "should insert a space between to Ps" do
-      PrettyText.excerpt("<p>a</p><p>b</p>",5).should == "a b "
+      PrettyText.excerpt("<p>a</p><p>b</p>", 5).should == "a b "
     end
 
     it "should strip quotes" do
-      PrettyText.excerpt("<aside class='quote'><p>a</p><p>b</p></aside>boom",5).should == "boom"
+      PrettyText.excerpt("<aside class='quote'><p>a</p><p>b</p></aside>boom", 5).should == "boom"
     end
 
     it "should not count the surrounds of a link" do
-      PrettyText.excerpt("<a href='http://cnn.com'>cnn</a>",3).should == "<a href='http://cnn.com'>cnn</a>"
+      PrettyText.excerpt("<a href='http://cnn.com'>cnn</a>", 3).should == "<a href='http://cnn.com'>cnn</a>"
     end
 
     it "should truncate links" do
-      PrettyText.excerpt("<a href='http://cnn.com'>cnn</a>",2).should == "<a href='http://cnn.com'>cn&hellip;</a>"
+      PrettyText.excerpt("<a href='http://cnn.com'>cnn</a>", 2).should == "<a href='http://cnn.com'>cn&hellip;</a>"
     end
 
     it "should be able to extract links" do
@@ -157,23 +174,23 @@ test
     end
 
     it "should not preserve tags in code blocks" do
-      PrettyText.excerpt("<pre><code class='handlebars'>&lt;h3&gt;Hours&lt;/h3&gt;</code></pre>",100).should == "&lt;h3&gt;Hours&lt;/h3&gt;"
+      PrettyText.excerpt("<pre><code class='handlebars'>&lt;h3&gt;Hours&lt;/h3&gt;</code></pre>", 100).should == "&lt;h3&gt;Hours&lt;/h3&gt;"
     end
 
     it "should handle nil" do
-      PrettyText.excerpt(nil,100).should == ''
+      PrettyText.excerpt(nil, 100).should == ''
     end
   end
 
 
   describe "apply cdn" do
     it "should detect bare links to images and apply a CDN" do
-      PrettyText.apply_cdn("<a href='/hello.png'>hello</a><img src='/a.jpeg'>","http://a.com").should ==
-        "<a href=\"http://a.com/hello.png\">hello</a><img src=\"http://a.com/a.jpeg\">"
+      PrettyText.apply_cdn("<a href='/hello.png'>hello</a><img src='/a.jpeg'>", "http://a.com").should ==
+          "<a href=\"http://a.com/hello.png\">hello</a><img src=\"http://a.com/a.jpeg\">"
     end
     it "should not touch non images" do
-      PrettyText.apply_cdn("<a href='/hello'>hello</a>","http://a.com").should ==
-        "<a href=\"/hello\">hello</a>"
+      PrettyText.apply_cdn("<a href='/hello'>hello</a>", "http://a.com").should ==
+          "<a href=\"/hello\">hello</a>"
     end
   end
 end

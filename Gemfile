@@ -90,6 +90,7 @@ group :test, :development do
   gem 'guard-spork'
   gem 'jasminerice'
   gem 'mocha', require: false
+  gem 'nokogiri-diff'
   gem 'rb-fsevent'
   gem 'rb-inotify', '~> 0.8.8', require: RUBY_PLATFORM.include?('linux') && 'rb-inotify'
   gem 'rspec-rails'
